@@ -14,6 +14,8 @@ use yii\widgets\ActiveForm;
 use yii\web\response;
 use app\models\FormContactos;
 use app\models\Contactos;
+use app\models\FormSearch;
+use yii\helpers\Html;
 
 class SiteController extends Controller
 {
@@ -23,7 +25,27 @@ class SiteController extends Controller
 
     public function actionView()
     {
-        return $this->render('view');
+        $table = new Contactos();
+        $model = $table->find()->all();
+
+        $form = new FormSearch();
+        $search = null;
+        if($form->load(Yii::$app->request->get())) {
+            if($form->validate()) {
+                $search = Html::encode($form->q);
+                $query = "select * from contacts where id like '%$search%' or name_first like '%$search%' or name_last like '%$search%'";
+                $model = $table->findBySql($query)->all();
+            }else{
+                $form->getErrors();
+            }
+
+        }
+
+        return $this->render('view', [
+            'model' => $model,
+            'form' => $form,
+            'search' => $search,
+        ]);
     }
 
     public function actionCreate()

@@ -2,7 +2,10 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
+use yii\helpers\Url;
 ?>
+
+<a href="<?= Url::toRoute('site/view') ?>">Ver Contactos</a>
 
 <h1>Crear Contacto</h1>
 <h3><?= $msg ?></h3>

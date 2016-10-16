@@ -15,10 +15,15 @@ class SiteController extends Controller
      * @inheritdoc
      */
 
-    public function actionSaludo()
+    public function actionSaludo($get = 'Parametros get')
     {
         $mensaje = 'Hola Mundo';
-        return $this->render("saludo", ["mensaje" => $mensaje]);
+        return $this->render("saludo",
+            [
+                "mensaje" => $mensaje,
+                "get" => $get
+            ]
+        );
     }
 
     public function behaviors()

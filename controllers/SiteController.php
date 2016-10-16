@@ -26,6 +26,22 @@ class SiteController extends Controller
         );
     }
 
+    public function actionFormulario($mensaje = null)
+    {
+        return $this->render("formulario", ["mensaje" => $mensaje]);
+    }
+
+    public function actionRequest()
+    {
+        $mensaje = null;
+
+        if($_REQUEST['nombre']) {
+            $mensaje = "El nombre ingresado es: ". $_REQUEST['nombre'];
+        }
+
+        $this->redirect(["site/formulario", "mensaje" => $mensaje]);
+    }
+
     public function behaviors()
     {
         return [

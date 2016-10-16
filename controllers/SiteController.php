@@ -12,12 +12,49 @@ use app\models\ValidarFormulario;
 use app\models\ValidarFormularioAjax;
 use yii\widgets\ActiveForm;
 use yii\web\response;
+use app\models\FormContactos;
+use app\models\Contactos;
 
 class SiteController extends Controller
 {
     /**
      * @inheritdoc
      */
+
+    public function actionView()
+    {
+        return $this->render('view');
+    }
+
+    public function actionCreate()
+    {
+        $model = new FormContactos();
+        $msg = null;
+
+        if($model->load(Yii::$app->request->post())) {
+            if($model->validate()) {
+                $table = new Contactos();
+                $table->name_first = $model->name_first;
+                $table->name_last = $model->name_last;
+                $table->email = $model->email;
+                $table->created_at = date('Y-m-d H:i:s');
+                if($table->insert()) {
+                    $msg = "Registro guardado correctamente";
+                    $model->name_first = null;
+                    $model->name_last = null;
+                    $model->email = null;
+                }else{
+                    $msg = "Ha ocurrido un error al guardar el registro";
+                }
+            }else{
+                $model->getErrors();
+            }
+        }
+        return $this->render("create", [
+            'model' => $model,
+            'msg' => $msg,
+        ]);
+    }
 
     public function actionSaludo($get = 'Parametros get')
     {

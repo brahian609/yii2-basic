@@ -2,6 +2,8 @@
 use yii\helpers\Url;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
+use yii\data\Pagination;
+use yii\widgets\LinkPager;
 ?>
 
 <a href="<?= Url::toRoute('site/create') ?>">Crear Contacto</a>
@@ -60,3 +62,6 @@ use yii\widgets\ActiveForm;
     ?>
     </tbody>
 </table>
+<?= LinkPager::widget([
+    "pagination" => $pages,
+]) ?>

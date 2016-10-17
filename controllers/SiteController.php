@@ -16,6 +16,7 @@ use app\models\FormContactos;
 use app\models\Contactos;
 use app\models\FormSearch;
 use yii\helpers\Html;
+use yii\data\Pagination;
 
 class SiteController extends Controller
 {
@@ -25,26 +26,43 @@ class SiteController extends Controller
 
     public function actionView()
     {
-        $table = new Contactos();
-        $model = $table->find()->all();
-
         $form = new FormSearch();
         $search = null;
         if($form->load(Yii::$app->request->get())) {
             if($form->validate()) {
                 $search = Html::encode($form->q);
-                $query = "select * from contacts where id like '%$search%' or name_first like '%$search%' or name_last like '%$search%'";
-                $model = $table->findBySql($query)->all();
+                $table = Contactos::find()
+                         ->where(["like", "id", $search])
+                         ->orWhere(["like", "name_first", $search])
+                         ->orWhere(["like", "name_last", $search]);
+                $count = clone $table;
+                $pages = new Pagination([
+                    "pageSize" => 2,
+                    "totalCount" => $count->count()
+                ]);
+                $model = $table->offset($pages->offset)
+                         ->limit($pages->limit)
+                         ->all();
             }else{
                 $form->getErrors();
             }
-
+        }else{
+            $table = Contactos::find();
+            $count = clone $table;
+            $pages = new Pagination([
+                "pageSize" => 2,
+                "totalCount" => $count->count()
+            ]);
+            $model = $table->offset($pages->offset)
+                ->limit($pages->limit)
+                ->all();
         }
 
         return $this->render('view', [
             'model' => $model,
             'form' => $form,
             'search' => $search,
+            "pages" => $pages,
         ]);
     }
 

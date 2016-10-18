@@ -20,12 +20,118 @@ use yii\data\Pagination;
 use yii\helpers\Url;
 use app\models\FormRegister;
 use app\models\Users;
+use yii\web\Session;
+use app\models\FormRecoverPass;
+use app\models\FormResetPass;
 
 class SiteController extends Controller
 {
     /**
      * @inheritdoc
      */
+
+    public function actionRecoverpass()
+    {
+        $model = new FormRecoverPass;
+        $msg = null;
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($model->validate()) {
+                $table = Users::find()->where("email=:email", [":email" => $model->email]);
+                //Si el usuario existe
+                if ($table->count() == 1) {
+                    //Crear variables de sesión para limitar el tiempo de restablecido del password
+                    //hasta que el navegador se cierre
+                    $session = new Session;
+                    $session->open();
+
+                    $session["recover"] = $this->randKey("abcdef0123456789", 200);
+                    $recover = $session["recover"];
+
+                    $table = Users::find()->where("email=:email", [":email" => $model->email])->one();
+                    $session["id_recover"] = $table->id;
+
+                    $verification_code = $this->randKey("abcdef0123456789", 8);
+                    $table->verification_code = $verification_code;
+                    $table->save();
+
+                    $subject = "Recuperar password";
+                    $body = "<p>Copie el siguiente código de verificación para restablecer su password ... ";
+                    $body .= "<strong>" . $verification_code . "</strong></p>";
+                    $body .= "<p><a href='http://localhost/yii2-basic/web/index.php?r=site/resetpass'>Recuperar password</a></p>";
+
+                    //Enviamos el correo
+                    Yii::$app->mailer->compose()
+                        ->setTo($model->email)
+                        ->setFrom([Yii::$app->params["adminEmail"] => Yii::$app->params["title"]])
+                        ->setSubject($subject)
+                        ->setHtmlBody($body)
+                        ->send();
+
+                    $model->email = null;
+                    $msg = "Le hemos enviado un mensaje a su cuenta de correo para que pueda resetear su password";
+                } else {
+                    $msg = "Ha ocurrido un error";
+                }
+            } else {
+                $model->getErrors();
+            }
+        }
+        return $this->render("recoverpass", [
+            "model" => $model,
+            "msg" => $msg
+        ]);
+    }
+
+    public function actionResetpass()
+    {
+        $model = new FormResetPass;
+        $msg = null;
+
+        $session = new Session;
+        $session->open();
+
+        if (empty($session["recover"]) || empty($session["id_recover"])) {
+            return $this->redirect(["site/index"]);
+        } else {
+            $recover = $session["recover"];
+            $model->recover = $recover;
+            $id_recover = $session["id_recover"];
+        }
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($model->validate()) {
+                if ($recover == $model->recover) {
+                    $table = Users::findOne(["email" => $model->email, "id" => $id_recover, "verification_code" => $model->verification_code]);
+                    $table->password = crypt($model->password, Yii::$app->params["salt"]);
+
+                    if ($table->save()) {
+                        $session->destroy();
+
+                        $model->email = null;
+                        $model->password = null;
+                        $model->password_repeat = null;
+                        $model->recover = null;
+                        $model->verification_code = null;
+
+                        $msg = "Password recuperado exitosamente, redireccionando...";
+                        $msg .= "<meta http-equiv='refresh' content='5; " . Url::toRoute("site/login") . "'>";
+                    } else {
+                        $msg = "Ha ocurrido un error";
+                    }
+
+                } else {
+                    $model->getErrors();
+                }
+            }
+        }
+
+        return $this->render("resetpass", [
+            "model" => $model,
+            "msg" => $msg
+        ]);
+
+    }
 
     private function randKey($str = '', $long = 0)
     {

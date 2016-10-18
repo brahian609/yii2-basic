@@ -49,7 +49,7 @@ use yii\widgets\LinkPager;
             <td><?= $row->email ?></td>
             <td><?= $row->created_at ?></td>
             <td>
-                <a href=""  >
+                <a href="<?= Url::toRoute(['site/update', 'id' => $row->id]) ?>">
                     <i class="glyphicon glyphicon-edit"></i>
                 </a>
                 <?php

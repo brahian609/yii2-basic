@@ -6,6 +6,7 @@ use yii\base\Model;
 
 class FormContactos extends Model
 {
+    public $id;
     public $name_first;
     public $name_last;
     public $email;
@@ -13,6 +14,7 @@ class FormContactos extends Model
     public function rules()
     {
         return[
+            ['id', 'integer', 'message' => 'Id incorrecto'],
             ['name_first', 'required', 'message' => 'Campo requerido'],
             ['name_first', 'match', 'pattern' => "/^.{3,50}$/", 'message' => 'Minimo 3 y máximo 50 caracteres'],
             ['name_first', 'match', 'pattern' => '/^[a-záéíóúñ\s]+$/i', 'message' => 'Ingresa solo letras'],

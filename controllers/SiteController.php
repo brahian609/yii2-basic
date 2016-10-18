@@ -25,6 +25,73 @@ class SiteController extends Controller
      * @inheritdoc
      */
 
+    public  function actionUpdate()
+    {
+        $model = new FormContactos();
+        $msg = null;
+
+        if($model->load(Yii::$app->request->post()))
+        {
+            if($model->validate())
+            {
+                $table = Contactos::findOne($model->id);
+                if($table)
+                {
+                    $table->name_first = $model->name_first;
+                    $table->name_last = $model->name_last;
+                    $table->email = $model->email;
+
+                    if ($table->update())
+                    {
+                        $msg = "El Contacto ha sido actualizado correctamente";
+                    }
+                    else
+                    {
+                        $msg = "El Contacto no ha podido ser actualizado";
+                    }
+                }
+                else
+                {
+                    $msg = "El contacto seleccionado no ha sido encontrado";
+                }
+            }
+            else
+            {
+                $model->getErrors();
+            }
+        }
+
+
+        if (Yii::$app->request->get("id"))
+        {
+            $id = Html::encode($_GET["id"]);
+            if ((int) $id)
+            {
+                $table = Contactos::findOne($id);
+                if($table)
+                {
+                    $model->id = $table->id;
+                    $model->name_first = $table->name_first;
+                    $model->name_last = $table->name_last;
+                    $model->email = $table->email;
+                }
+                else
+                {
+                    return $this->redirect(["site/view"]);
+                }
+            }
+            else
+            {
+                return $this->redirect(["site/view"]);
+            }
+        }
+        else
+        {
+            return $this->redirect(["site/view"]);
+        }
+        return $this->render("update", ["model" => $model, "msg" => $msg]);
+    }
+
     public function actionDelete()
     {
         if(Yii::$app->request->get())

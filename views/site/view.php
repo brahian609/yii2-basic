@@ -52,9 +52,12 @@ use yii\widgets\LinkPager;
                 <a href=""  >
                     <i class="glyphicon glyphicon-edit"></i>
                 </a>
-                <a href="">
-                    <i class="glyphicon glyphicon-trash"></i>
-                </a>
+                <?php
+                echo Html::a('<i class="glyphicon glyphicon-trash"></i>',
+                     Url::toRoute(["site/delete", "id" => $row->id]),
+                     ['title'=>Yii::t('app','Revoke social worker'),
+                     'data-confirm'=>'¿Desea eliminar el registro '.$row->id.'?']);
+                ?>
             </td>
         </tr>
         <?php

@@ -17,12 +17,42 @@ use app\models\Contactos;
 use app\models\FormSearch;
 use yii\helpers\Html;
 use yii\data\Pagination;
+use yii\helpers\Url;
 
 class SiteController extends Controller
 {
     /**
      * @inheritdoc
      */
+
+    public function actionDelete()
+    {
+        if(Yii::$app->request->get())
+        {
+            $id = Html::encode($_GET["id"]);
+            if((int) $id)
+            {
+                if(Contactos::deleteAll("id=:id", [":id" => $id]))
+                {
+                    return $this->redirect(["site/view"]);
+                }
+                else
+                {
+                    echo "Ha ocurrido un error al eliminar el registro, redireccionando ...";
+                    echo "<meta http-equiv='refresh' content='3; ".Url::toRoute("site/view")."'>";
+                }
+            }
+            else
+            {
+                echo "Ha ocurrido un error al eliminar el registro, redireccionando ...";
+                echo "<meta http-equiv='refresh' content='3; ".Url::toRoute("site/view")."'>";
+            }
+        }
+        else
+        {
+            return $this->redirect(["site/view"]);
+        }
+    }
 
     public function actionView()
     {

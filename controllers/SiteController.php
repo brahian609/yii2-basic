@@ -18,12 +18,115 @@ use app\models\FormSearch;
 use yii\helpers\Html;
 use yii\data\Pagination;
 use yii\helpers\Url;
+use app\models\FormRegister;
+use app\models\Users;
 
 class SiteController extends Controller
 {
     /**
      * @inheritdoc
      */
+
+    private function randKey($str = '', $long = 0)
+    {
+        $key = null;
+        $str = str_split($str);
+        $start = 0;
+        $limit = count($str) - 1;
+        for ($x = 0; $x < $long; $x++) {
+            $key .= $str[rand($start, $limit)];
+        }
+        return $key;
+    }
+
+    public function actionConfirm()
+    {
+        $table = new Users;
+        if (Yii::$app->request->get()) {
+            $id = Html::encode($_GET["id"]);
+            $authKey = $_GET["authKey"];
+
+            if ((int)$id) {
+                $model = $table
+                    ->find()
+                    ->where("id=:id", [":id" => $id])
+                    ->andWhere("authKey=:authKey", [":authKey" => $authKey]);
+
+                if ($model->count() == 1) {
+                    $activar = Users::findOne($id);
+                    $activar->activate = 1;
+                    if ($activar->update()) {
+                        echo "Registro finalizado correctamente, redireccionando ...";
+                        echo "<meta http-equiv='refresh' content='8; " . Url::toRoute("site/login") . "'>";
+                    } else {
+                        echo "Ha ocurrido un error al realizar el registro, redireccionando ...";
+                        echo "<meta http-equiv='refresh' content='8; " . Url::toRoute("site/login") . "'>";
+                    }
+                } else {
+                    return $this->redirect(["site/login"]);
+                }
+            } else {
+                return $this->redirect(["site/login"]);
+            }
+        }
+    }
+
+    public function actionRegister()
+    {
+        $model = new FormRegister;
+        $msg = null;
+
+        if ($model->load(Yii::$app->request->post()) && Yii::$app->request->isAjax) {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return ActiveForm::validate($model);
+        }
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($model->validate()) {
+                $table = new Users;
+                $table->username = $model->username;
+                $table->email = $model->email;
+
+                $table->password = crypt($model->password, Yii::$app->params["salt"]);
+
+                //clave será utilizada para activar el usuario
+                $table->authKey = $this->randKey("abcdef0123456789", 200);
+                //Creamos un token de acceso único para el usuario
+                $table->accessToken = $this->randKey("abcdef0123456789", 200);
+
+                if ($table->insert()) {
+                    $user = $table->find()->where(["email" => $model->email])->one();
+                    $id = urlencode($user->id);
+                    $authKey = urlencode($user->authKey);
+
+                    $subject = "Confirmar registro";
+                    $body = "<h1>Haga click en el siguiente enlace para finalizar tu registro</h1>";
+                    $body .= "<a href='http://localhost/yii2-basic/web/index.php?r=site/confirm&id=" . $id . "&authKey=" . $authKey . "'>Confirmar</a>";
+
+                    //enviar correo
+                    Yii::$app->mailer->compose()
+                        ->setTo($user->email)
+                        ->setFrom([Yii::$app->params["adminEmail"] => Yii::$app->params["title"]])
+                        ->setSubject($subject)
+                        ->setHtmlBody($body)
+                        ->send();
+
+                    $model->username = null;
+                    $model->email = null;
+                    $model->password = null;
+                    $model->password_repeat = null;
+
+                    $msg = "Registro exitoso, sólo falta confirmar tu registro en tu cuenta de correo";
+                } else {
+                    $msg = "Ha ocurrido un error al llevar a cabo tu registro";
+                }
+
+            } else {
+                $model->getErrors();
+            }
+        }
+        return $this->render("register", ["model" => $model, "msg" => $msg]);
+    }
 
     public  function actionUpdate()
     {
